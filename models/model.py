@@ -12,14 +12,8 @@ import numpy as np
 class ResBlock(nn.Module):
     pass
 
-class G(nn.Module):
+class Generator(nn.Module):
     pass
 
-class F(nn.Module):
-    pass
-
-class Dx(nn.Module):
-    pass
-
-class Dy(nn.Module):
+class Discriminator(nn.Module):
     pass
