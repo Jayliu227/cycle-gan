@@ -14,7 +14,7 @@ class ResBlock(nn.Module):
         super(ResBlock, self).__init__()
         model = [
             nn.ReflectionPad2d(1),
-            nn.Conv2d(num_channels, num_channels, 3), 
+            nn.Conv2d(num_channels, num_channels, 3),  # Kernel size = 3 
             nn.BatchNorm2d(num_channels),
             nn.ReLU(inplace=True),
             
@@ -33,9 +33,114 @@ class ResBlock(nn.Module):
         identity = x
         out = self.model(x)
         out += identity
+        return out;
 
-class Generator(nn.Module):
-    pass
+
+
+class UnetBlock(nn.Module):
+    """Defines the Unet submodule with skip connection.
+        X  outer ----------------inner                              inner------------------    outer
+           |--  Conv2d(down)  --  |  submodule = (previous) UnetBlock| -- ConvTranspose2d(up) -- |
+    """
+    def __init__(self, outer_nc, inner_nc, submodule = None, 
+                         outermost = False, innermost = False ):
+        """Construct a Unet submodule with skip connections.
+        Parameters:
+            outer_nc (int) -- the number of filters in the outer conv layer
+            inner_nc (int) -- the number of filters in the inner conv layer
+            input_nc (int) -- the number of channels in input images/features
+            submodule (UnetSkipConnectionBlock) -- previously defined submodules
+            innermost (bool)    -- if this module is the innermost module
+            outermost (bool)    -- if this module is the outermost module
+        """
+        super(UnetBlock, self).__init__()
+        # batch normalization 
+        self.norm_layer = nn.BatchNorm2d
+        
+        '''
+            except outermost, each block sequentially has 
+            LeakyRelu 
+            Conv2d 
+            BatchNorm
+                ...
+            ReLU
+            ConvT2d
+            BatchNorm
+
+            just to make the block look symmetric...
+        '''
+
+        # @Case not the innermost unetblock or outer most unetblock
+        downconv = nn.Conv2d(outer_nc, inner_nc, 
+                            kernel_size = 4, stride = 2, 
+                            padding = 1, bias = True)
+        downrelu = nn.LeakyReLU(0.2, True)
+        downnorm = self.norm_layer(inner_nc)
+
+        # inner_nc * 2 b/c there's residual input from previous layer
+        # adding to the total filter size, see forward 
+        upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,  
+                            kernel_size = 4, stride = 2, 
+                            padding = 1, bias = True)
+        uprelu = nn.ReLU(True)
+        upnorm = self.norm_layer(outer_nc)
+
+        if outermost:
+            down = [downconv] 
+            up = [uprelu, upconv, nn.Tanh()]
+            model = down + [submodule] + up
+
+        elif innermost:
+            # only in innermost not having previous residual input 
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,  
+                    kernel_size = 4, stride = 2, 
+                    padding = 1, bias = True)
+
+            down = [downrelu, downconv] # Todo - i think it's ok to add batchnorm?
+            up = [uprelu, upconv, upnorm]
+            model = down + up
+
+        else:
+            down = [downrelu, downconv, downnorm] 
+            up = [uprelu, upconv, upnorm]
+            model = down + [submodule] + up
+        
+        self.model = nn.Sequential(*model)
+    
+    def forward(self, x):
+        if self.outermost: # no residual input
+            return self.model(x)
+        
+        # input image is arranged as 
+        # numOfTotalImages * num_channels * Witdh * Height 
+        return torch.cat([x, self.model(x)], 1)       
+
+
+
+# Generator 
+class Unet(nn.Module):
+    def __init__(self, input_nc, output_nc, ngf = 64):
+        """Construct a Unet by UnetBlock
+        Parameters:
+            input_nc (int)  -- the number of channels in input images
+            output_nc (int) -- the number of channels in output images
+            ngf (int)       -- the number of filters in the outermost conv & convTranspose layer
+
+        recursively from innermost layer to outermost layer, numbers are channels:
+
+        """
+        
+        super(Unet, self).__init__()
+        # ONLY outermost layer does not "convdown"(increase) the num_filters  
+        unet_block = UnetBlock(ngf * 8, ngf * 8, submodule = None, innermost = True)
+        unet_block = UnetBlock(ngf * 4, ngf * 8, submodule = unet_block)
+        unet_block = UnetBlock(ngf * 2, ngf * 4, submodule = unet_block)
+        unet_block = UnetBlock(ngf * 1, ngf * 2, submodule = unet_block)        
+        # assuming output_nc = input_nc 
+        self.model = UnetBlock(input_nc, ngf, submodule = unet_block, outermost = True)      
+
+    def forward(self, image):
+        return self.model(image)
 
 class Discriminator(nn.Module):
     def __init__(self, num_channels):
@@ -67,3 +172,4 @@ class Discriminator(nn.Module):
     def forward(self, x):
         out = self.model(x)
         return out
+
