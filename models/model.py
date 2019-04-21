@@ -35,8 +35,6 @@ class ResBlock(nn.Module):
         out += identity
         return out;
 
-
-
 class UnetBlock(nn.Module):
     """Defines the Unet submodule with skip connection.
         X  outer ----------------inner                              inner------------------    outer
@@ -115,10 +113,7 @@ class UnetBlock(nn.Module):
         # numOfTotalImages * num_channels * Witdh * Height 
         return torch.cat([x, self.model(x)], 1)       
 
-
-
-# Generator 
-class Unet(nn.Module):
+class Generator(nn.Module):
     def __init__(self, input_nc, output_nc, ngf = 64):
         """Construct a Unet by UnetBlock
         Parameters:
@@ -127,10 +122,8 @@ class Unet(nn.Module):
             ngf (int)       -- the number of filters in the outermost conv & convTranspose layer
 
         recursively from innermost layer to outermost layer, numbers are channels:
-
         """
-        
-        super(Unet, self).__init__()
+        super(Generator, self).__init__()
         # ONLY outermost layer does not "convdown"(increase) the num_filters  
         unet_block = UnetBlock(ngf * 8, ngf * 8, submodule = None, innermost = True)
         unet_block = UnetBlock(ngf * 4, ngf * 8, submodule = unet_block)
@@ -139,14 +132,14 @@ class Unet(nn.Module):
         # assuming output_nc = input_nc 
         self.model = UnetBlock(input_nc, ngf, submodule = unet_block, outermost = True)      
 
-    def forward(self, image):
-        return self.model(image)
+    def forward(self, x):
+        return self.model(x)
 
 class Discriminator(nn.Module):
-    def __init__(self, num_channels):
+    def __init__(self, input_nc):
         super(Discriminator, self).__init__()
         model = [
-            nn.Conv2d(num_channels, 10, 4, 2, 1),
+            nn.Conv2d(input_nc, 10, 4, 2, 1),
             nn.LeakyReLU(0.2, inplace=True),
         ]
         model += [
@@ -171,5 +164,6 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         out = self.model(x)
-        return out
+        # do an average pool on the final layer and flatten it so that the return value is of size (batch_size, 1)
+        return torch.nn.functional.avg_pool2d(out, out.size()[2:]).view(out.size()[0], -1)
 
