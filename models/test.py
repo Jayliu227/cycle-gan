@@ -45,16 +45,19 @@ dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, n
 
 output_dir_X = '../output/X'
 output_dir_Y = '../output/Y'
+output_dir_recover = '../output/recover'
 
 if not os.path.exists(output_dir_X):
     os.makedirs(output_dir_X)
 if not os.path.exists(output_dir_Y):
     os.makedirs(output_dir_Y)
+if not os.path.exists(output_dir_recover):
+    os.makedirs(output_dir_recover)
 
 print('Start Generating Images')
 for idx, batch in enumerate(dataloader):
     real_X = input_X.copy_(batch['X'])
-    real_Y = input_X.copy_(batch['Y'])
+    real_Y = input_Y.copy_(batch['Y'])
 
     # generate output
     fake_Y = (G(real_X).data + 1.0) * 0.5
@@ -62,6 +65,10 @@ for idx, batch in enumerate(dataloader):
 
     save_image(fake_X, os.path.join(output_dir_X, '%d.png' % (idx + 1)))
     save_image(fake_Y, os.path.join(output_dir_Y, '%d.png' % (idx + 1)))
+
+    recover = (G(F(real_Y)) + 1.0) * 0.5
+    save_image(fake_X, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))
+
 
 print('Finished Generating Images.')
 
