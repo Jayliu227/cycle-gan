@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import torch
+import time
 import itertools
 from torch.autograd import Variable
 from torchvision.transforms import transforms
@@ -88,6 +89,7 @@ dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, nu
 
 print('Start training.')
 for epoch in range(epochs):
+    start_time = time.monotonic()
     for idx, batch in enumerate(dataloader):
         real_X = input_X.copy_(batch['X'])
         real_Y = input_Y.copy_(batch['Y'])
@@ -152,8 +154,9 @@ for epoch in range(epochs):
 
         optimizer_Dy.step()
 
+    time_taken = time.monotonic() - start_time
     # log information
-    print(f"epoch {epoch}: loss_G {loss_G}, loss_Dx {loss_Dx}, loss_Dy{loss_Dy}.")
+    print(f"[{time_taken}] epoch {epoch}: loss_G {loss_G}, loss_Dx {loss_Dx}, loss_Dy {loss_Dy}.")
 
     # update learning rates
     lr_scheduler_G.step()
