@@ -20,9 +20,11 @@ decay_epoch = 50
 image_size = 32
 input_nc = 3
 output_nc = 3
-cuda = False
-ngpu = 0
-num_workers = 8
+cuda = True
+num_workers = 10
+
+if torch.cuda.is_available() and not cuda:
+    print("Cuda available but not in use.")
 
 # generator G: X->Y
 G = Generator(input_nc, output_nc)
@@ -84,6 +86,7 @@ transforms = transforms.Compose([
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
 dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
+print('Start training.')
 for epoch in range(epochs):
     for idx, batch in enumerate(dataloader):
         real_X = input_X.copy_(batch['X'])
