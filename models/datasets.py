@@ -12,10 +12,12 @@ class ImageDataset(Dataset):
         '''
         input: dataroot
             dataroot
-            |----trainX
-            |----trainY
-            |----testX
-            |----testY
+            |----train
+                |----X
+                |----Y
+            |----test
+                |----X
+                |----Y
                transforms: optional
                aligned: images from file X and Y are at the same positions
                mode: which directories to load
