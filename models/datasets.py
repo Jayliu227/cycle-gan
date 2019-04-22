@@ -12,12 +12,10 @@ class ImageDataset(Dataset):
         '''
         input: dataroot
             dataroot
-            |----train
-                 |----X
-                 |----Y
-            |----test
-                 |----X
-                 |----Y
+            |----trainX
+            |----trainY
+            |----testX
+            |----testY
                transforms: optional
                aligned: images from file X and Y are at the same positions
                mode: which directories to load
@@ -34,10 +32,11 @@ class ImageDataset(Dataset):
                                       'Y' will contain the batch of images from set Y 
         '''
         image_X = Image.open(self.files_X[index % len(self.files_X)])
-        if aligned:
+        if self.aligned:
             image_Y = Image.open(self.files_Y[index % len(self.files_Y)])
         else:
             image_Y = Image.open(self.files_Y[random.randint(0, len(self.files_Y) - 1)])
+
         image_X = self.transforms(image_X)
         image_Y = self.transforms(image_Y)
         return {'X': image_X, 'Y': image_Y}

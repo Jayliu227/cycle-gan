@@ -12,10 +12,10 @@ def init_weights_normal(m):
     '''
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        torch.nn.init.normal(m.weight.data, 0.0, 0.02)
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant(m.bias.data, 0.0)
+        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+        torch.nn.init.constant_(m.bias.data, 0.0)
 
 class LambdaLR():
     def __init__(self, n_epochs, offset, decay_start_epoch):
@@ -25,10 +25,10 @@ class LambdaLR():
         self.decay_start_epoch = decay_start_epoch
 
     def step(self, epoch):
-    '''
-    input: current epoch
-    output: a multiplicative factor used for updating the learning rate
-    '''
+        '''
+        input: current epoch
+        output: a multiplicative factor used for updating the learning rate
+        '''
         return 1.0 - max(0, epoch + self.offset - self.decay_start_epoch) / (self.n_epochs - self.decay_start_epoch)
 
 class ReplayBuffer():
@@ -56,7 +56,7 @@ class ReplayBuffer():
                 result.append(element)
             else:
                 if random.uniform(0, 1) > 0.5:
-                    i = random.randint(0, self.max_size)
+                    i = random.randint(0, self.max_size - 1)
                     result.append(self.buffer[i].clone())
                     self.buffer[i] = element
                 else:

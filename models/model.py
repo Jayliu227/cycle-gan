@@ -40,8 +40,7 @@ class UnetBlock(nn.Module):
         X  outer ----------------inner                              inner------------------    outer
            |--  Conv2d(down)  --  |  submodule = (previous) UnetBlock| -- ConvTranspose2d(up) -- |
     """
-    def __init__(self, outer_nc, inner_nc, submodule = None, 
-                         outermost = False, innermost = False ):
+    def __init__(self, outer_nc, inner_nc, submodule=None, outermost=False, innermost=False):
         """Construct a Unet submodule with skip connections.
         Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
@@ -54,6 +53,8 @@ class UnetBlock(nn.Module):
         super(UnetBlock, self).__init__()
         # batch normalization 
         self.norm_layer = nn.BatchNorm2d
+        self.outermost = outermost
+        self.innermost = innermost
         
         '''
             except outermost, each block sequentially has 
@@ -77,9 +78,9 @@ class UnetBlock(nn.Module):
 
         # inner_nc * 2 b/c there's residual input from previous layer
         # adding to the total filter size, see forward 
-        upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,  
-                            kernel_size = 4, stride = 2, 
-                            padding = 1, bias = True)
+        upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc,  
+                            kernel_size=4, stride=2, 
+                            padding=1, bias=True)
         uprelu = nn.ReLU(True)
         upnorm = self.norm_layer(outer_nc)
 
@@ -87,7 +88,6 @@ class UnetBlock(nn.Module):
             down = [downconv] 
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
-
         elif innermost:
             # only in innermost not having previous residual input 
             upconv = nn.ConvTranspose2d(inner_nc, outer_nc,  
@@ -97,7 +97,6 @@ class UnetBlock(nn.Module):
             down = [downrelu, downconv] # Todo - i think it's ok to add batchnorm?
             up = [uprelu, upconv, upnorm]
             model = down + up
-
         else:
             down = [downrelu, downconv, downnorm] 
             up = [uprelu, upconv, upnorm]
@@ -125,12 +124,12 @@ class Generator(nn.Module):
         """
         super(Generator, self).__init__()
         # ONLY outermost layer does not "convdown"(increase) the num_filters  
-        unet_block = UnetBlock(ngf * 8, ngf * 8, submodule = None, innermost = True)
-        unet_block = UnetBlock(ngf * 4, ngf * 8, submodule = unet_block)
-        unet_block = UnetBlock(ngf * 2, ngf * 4, submodule = unet_block)
-        unet_block = UnetBlock(ngf * 1, ngf * 2, submodule = unet_block)        
+        unet_block = UnetBlock(ngf * 8, ngf * 8, submodule=None, innermost=True)
+        unet_block = UnetBlock(ngf * 4, ngf * 8, submodule=unet_block)
+        unet_block = UnetBlock(ngf * 2, ngf * 4, submodule=unet_block)
+        unet_block = UnetBlock(ngf * 1, ngf * 2, submodule=unet_block)        
         # assuming output_nc = input_nc 
-        self.model = UnetBlock(input_nc, ngf, submodule = unet_block, outermost = True)      
+        self.model = UnetBlock(input_nc, ngf, submodule=unet_block, outermost=True)      
 
     def forward(self, x):
         return self.model(x)

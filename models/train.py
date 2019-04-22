@@ -12,7 +12,7 @@ from model import Discriminator
 from datasets import ImageDataset
 import utils
 
-dataroot = "../data/"
+dataroot = "../data"
 epochs = 100
 batch_size = 1
 lr = 0.0002
@@ -39,10 +39,10 @@ if cuda:
     Dx.cuda()
     Dy.cuda()
 
-G.apply(init_weights_normal)
-F.apply(init_weights_normal)
-Dx.apply(init_weights_normal)
-Dy.apply(init_weights_normal)
+G.apply(utils.init_weights_normal)
+F.apply(utils.init_weights_normal)
+Dx.apply(utils.init_weights_normal)
+Dy.apply(utils.init_weights_normal)
 
 # loss functions
 criterion_GAN = torch.nn.MSELoss()
@@ -50,7 +50,7 @@ criterion_cycle = torch.nn.L1Loss()
 criterion_identity = torch.nn.L1Loss()
 
 # optimizier
-optimizer_G = torch.optim.Adam(itertools.chain(G.parameters(), F.parameters()), lr=lr, betas(0.5, 0.999))
+optimizer_G = torch.optim.Adam(itertools.chain(G.parameters(), F.parameters()), lr=lr, betas=(0.5, 0.999))
 optimizer_Dx = torch.optim.Adam(Dx.parameters(), lr=lr, betas=(0.5, 0.999))
 optimizer_Dy = torch.optim.Adam(Dy.parameters(), lr=lr, betas=(0.5, 0.999))
 
@@ -58,28 +58,28 @@ optimizer_Dy = torch.optim.Adam(Dy.parameters(), lr=lr, betas=(0.5, 0.999))
 Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 
 # change lr according to the epoch
-lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optim_G, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
-lr_scheduler_Dx = torch.optim.lr_scheduler.LambdaLR(optim_Dx, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
-lr_scheduler_Dy = torch.optim.lr_scheduler.LambdaLR(optim_Dy, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
+lr_scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
+lr_scheduler_Dx = torch.optim.lr_scheduler.LambdaLR(optimizer_Dx, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
+lr_scheduler_Dy = torch.optim.lr_scheduler.LambdaLR(optimizer_Dy, lr_lambda=utils.LambdaLR(epochs, 0, decay_epoch).step)
 
 # replay buffer
-fake_X_buffer = ReplayBuffer()
-fake_Y_buffer = ReplayBuffer()
+fake_X_buffer = utils.ReplayBuffer()
+fake_Y_buffer = utils.ReplayBuffer()
 
 input_X = Tensor(batch_size, input_nc, image_size, image_size)
 input_Y = Tensor(batch_size, output_nc, image_size, image_size)
 
 # labels
 real_labels = Variable(Tensor(batch_size).fill_(1.0), requires_grad=False)
-false_labels = Variable(Tensor(batch_size).fill_(0.0), requires_grad=False)
+fake_labels = Variable(Tensor(batch_size).fill_(0.0), requires_grad=False)
 
-transforms = [
+transforms = transforms.Compose([
     transforms.Resize(int(image_size * 1.2), Image.BICUBIC),
     transforms.RandomCrop(image_size),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-]
+])
 
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
 dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
