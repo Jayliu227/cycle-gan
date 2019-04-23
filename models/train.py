@@ -6,6 +6,7 @@ import itertools
 from torch.autograd import Variable
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
+from torch.nn.parallel.data_parallel import DataParallel
 from PIL import Image
 
 from model import Generator
@@ -27,6 +28,8 @@ num_workers = 10
 if torch.cuda.is_available() and not cuda:
     print("Cuda available but not in use.")
 
+device = torch.device('cuda:0' if torch.cuda.is_available() and cuda else 'cpu')
+
 # generator G: X->Y
 G = Generator(input_nc, output_nc)
 # generator F: Y->X
@@ -36,11 +39,17 @@ Dx = Discriminator(input_nc)
 # discriminator Dy: Y->probability
 Dy = Discriminator(output_nc)
 
-if cuda:
-    G.cuda()
-    F.cuda()
-    Dx.cuda()
-    Dy.cuda()
+# parallelize the model if need to
+if torch.cuda.device_count() > 1 and cuda:
+    G = nn.DataParallel(G)
+    F = nn.DataParallel(F)
+    Dx = nn.DataParallel(Dx)
+    Dy = nn.DataParallel(Dy)
+
+G.to(device)
+F.to(device)
+Dx.to(device)
+Dy.to(device)
 
 G.apply(utils.init_weights_normal)
 F.apply(utils.init_weights_normal)
