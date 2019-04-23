@@ -66,8 +66,8 @@ for idx, batch in enumerate(dataloader):
     save_image(fake_X, os.path.join(output_dir_X, '%d.png' % (idx + 1)))
     save_image(fake_Y, os.path.join(output_dir_Y, '%d.png' % (idx + 1)))
 
-    recover = (G(F(real_Y)) + 1.0) * 0.5
-    save_image(fake_X, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))
+    recover = (F(G(real_X)).data + 1.0) * 0.5
+    save_image(recover, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))
 
 
 print('Finished Generating Images.')
