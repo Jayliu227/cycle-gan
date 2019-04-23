@@ -41,6 +41,7 @@ Dy = Discriminator(output_nc)
 
 # parallelize the model if need to
 if torch.cuda.device_count() > 1 and cuda:
+    print('Use %d gpus.' % torch.cuda.device_count())
     G = nn.DataParallel(G)
     F = nn.DataParallel(F)
     Dx = nn.DataParallel(Dx)
