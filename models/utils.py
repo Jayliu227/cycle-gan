@@ -1,7 +1,46 @@
 import random
 import sys
 import torch
-import numpy as np
+import os
+import platform
+if platform.system() == 'Darwin':
+    import matplotlib
+    matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+class Plotter():
+    def __init__(self, variable_names, save_path='./', save_name='plot'):
+        self.epochs = []
+        self.variable_names = variable_names
+        self.num_variables = len(variable_names)
+        self.save_path = save_path
+        self.save_name = save_name
+        self.variable_values = []
+
+        for _ in range(self.num_variables):
+            self.variable_values.append([])
+    
+    def add(self, new_variable_values):
+        if len(self.variable_values) != self.num_variables:
+            print('Error appending different number of variables into plotter.')
+            return
+
+        self.epochs.append(len(self.epochs))
+        for i in range(self.num_variables):
+            self.variable_values[i].append(new_variable_values[i])
+    
+    def plot(self, show=True, save=False):
+        for i in range(self.num_variables):
+            plt.plot(self.epochs, self.variable_values[i])
+        plt.legend(self.variable_names)
+        plt.xlabel('epochs')
+        plt.ylabel('losses')
+
+        if show:    
+            plt.show()
+        if save:
+            plt.savefig(os.path.join(self.save_path, self.save_name) + '.png')
+        plt.close()
 
 def init_weights_normal(m):
     '''
