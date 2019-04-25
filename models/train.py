@@ -97,7 +97,7 @@ transforms = transforms.Compose([
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
 dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
-p = Plotter(['Loss_G', 'Loss_Dx', 'Loss_Dy'])
+p = utils.Plotter(['Loss_G', 'Loss_Dx', 'Loss_Dy'])
 
 print('Start training.')
 for epoch in range(epochs):
