@@ -97,6 +97,8 @@ transforms = transforms.Compose([
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
 dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
+p = Plotter(['Loss_G', 'Loss_Dx', 'Loss_Dy'])
+
 print('Start training.')
 for epoch in range(epochs):
     start_time = time.monotonic()
@@ -166,7 +168,13 @@ for epoch in range(epochs):
 
     time_taken = time.monotonic() - start_time
     # log information
-    print(f"[{time_taken}] epoch {epoch}: loss_G {loss_G}, loss_Dx {loss_Dx}, loss_Dy {loss_Dy}.")
+    print(f"[{time_taken:.2f}s] --- <epoch {epoch}>: loss_G {loss_G:.5f} | loss_Dx {loss_Dx:.5f} | loss_Dy {loss_Dy:.5f}")
+
+    # add loss information into the plotter
+    p.add([loss_G, loss_Dx, loss_Dy])
+    # save a figure every 10 epochs
+    if epoch % 10 == 0 or epoch == epochs - 1:
+        p.plot(show=False, save=True)
 
     # update learning rates
     lr_scheduler_G.step()
