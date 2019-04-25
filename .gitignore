@@ -2,3 +2,4 @@
 ./data/
 X.zip
 Y.zip
+models/__pycache__/
