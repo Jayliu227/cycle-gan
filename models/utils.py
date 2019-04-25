@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 
 class Plotter():
     def __init__(self, variable_names, save_path='./', save_name='plot'):
+        if len(variable_names) == 0:
+            raise ValueError('Cannot accept no variable.')
         self.epochs = []
         self.variable_names = variable_names
         self.num_variables = len(variable_names)
