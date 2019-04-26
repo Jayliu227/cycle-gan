@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 class ImageDataset(Dataset):
-    def __init__(self, dataroot, transforms=None, aligned=False, mode='train'):
+    def __init__(self, dataroot, transforms=None, aligned=False, mode='train', forceRGB=True):
         '''
         input: dataroot
             dataroot
@@ -21,11 +21,15 @@ class ImageDataset(Dataset):
                transforms: optional
                aligned: images from file X and Y are at the same positions
                mode: which directories to load
+               forceRGB: force to convert images into RGB channels
+                        as some images are not in RGB when loaded
         '''
         self.transforms = transforms
         self.aligned = aligned
         self.files_X = sorted(glob.glob(os.path.join(dataroot, '%s/X' % mode) + '/*.*'))
         self.files_Y = sorted(glob.glob(os.path.join(dataroot, '%s/Y' % mode) + '/*.*'))
+
+        self.forceRGB = forceRGB
 
     def __getitem__(self, index):
         '''
@@ -39,8 +43,13 @@ class ImageDataset(Dataset):
         else:
             image_Y = Image.open(self.files_Y[random.randint(0, len(self.files_Y) - 1)])
 
+        if self.forceRGB:
+            image_X = image_X.convert('RGB')
+            image_Y = image_Y.convert('RGB')
+
         image_X = self.transforms(image_X)
         image_Y = self.transforms(image_Y)
+
         return {'X': image_X, 'Y': image_Y}
         
     def __len__(self):
