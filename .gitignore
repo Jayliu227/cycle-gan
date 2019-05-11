@@ -1,5 +1,9 @@
 .DS_store
 ./data/
+./data_old/
+./save/
+./output/
 X.zip
 Y.zip
 models/__pycache__/
+
