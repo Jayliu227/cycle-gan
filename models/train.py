@@ -98,7 +98,7 @@ transforms = transforms.Compose([
 ])
 
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
-dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 
 p = utils.Plotter(['Loss_G', 'Loss_Dx', 'Loss_Dy'])
 
