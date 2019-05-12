@@ -131,34 +131,36 @@ for epoch in range(epochs):
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
         # shape-color consistency loss
-        alpha = 2.0
-        beta = 2.0
-        gamma = 10.0
-        protect = 1e-5
+        if epoch > 50:
+            alpha = 2.0
+            beta = 2.0
+            gamma = 15.0
+            protect = 1e-5
+
+            gen_Y = (fake_Y.clone().detach().cpu() + 1.0) * 0.5
+            gen_X = (fake_X.clone().detach().cpu() + 1.0) * 0.5
+
+            mask_X = get_mask(raw_X)
+            mask_Y = get_mask(raw_Y)
+            mask_GX = get_mask(gen_Y)
+            mask_FY = get_mask(gen_X)
+
+            shape_sim_GX_Y = shape_sim(mask_GX, mask_Y)
+            shape_sim_FY_X = shape_sim(mask_FY, mask_X)
+
+            fore_color_sim_GX_Y = color_sim(gen_Y, mask_GX, raw_Y, mask_Y)
+            back_color_sim_GX_X = color_sim(gen_Y, mask_GX, raw_X, mask_X, is_foreground=False)
+
+            fore_color_sim_FY_X = color_sim(gen_X, mask_FY, raw_X, mask_X)
+            back_color_sim_FY_Y = color_sim(gen_X, mask_FY, raw_Y, mask_Y, is_foreground=False)        
+
+            loss_shape_color =  shape_sim_GX_Y / max(protect, alpha * fore_color_sim_GX_Y + beta * back_color_sim_GX_X)
+            loss_shape_color += shape_sim_FY_X / max(protect, alpha * fore_color_sim_FY_X + beta * back_color_sim_FY_Y)
+
+            loss_shape_color *= gamma
+        else:
+            loss_shape_color = 0
         
-        gen_Y = (fake_Y.clone().detach().cpu() + 1.0) * 0.5
-        gen_X = (fake_X.clone().detach().cpu() + 1.0) * 0.5
-        
-        mask_X = get_mask(raw_X)
-        mask_Y = get_mask(raw_Y)
-        mask_GX = get_mask(gen_Y)
-        mask_FY = get_mask(gen_X)
-        
-        shape_sim_GX_Y = shape_sim(mask_GX, mask_Y)
-        shape_sim_FY_X = shape_sim(mask_FY, mask_X)
-        
-        fore_color_sim_GX_Y = color_sim(gen_Y, mask_GX, raw_Y, mask_Y)
-        back_color_sim_GX_X = color_sim(gen_Y, mask_GX, raw_X, mask_X, is_foreground=False)
-        
-        fore_color_sim_FY_X = color_sim(gen_X, mask_FY, raw_X, mask_X)
-        back_color_sim_FY_Y = color_sim(gen_X, mask_FY, raw_Y, mask_Y, is_foreground=False)        
-        
-        loss_shape_color =  shape_sim_GX_Y / max(protect, alpha * fore_color_sim_GX_Y + beta * back_color_sim_GX_X)
-        loss_shape_color += shape_sim_FY_X / max(protect, alpha * fore_color_sim_FY_X + beta * back_color_sim_FY_Y)
-        
-        loss_shape_color *= gamma
-        
-        print("here")
         # total_loss on generators
         loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_X2X + loss_cycle_Y2Y + loss_shape_color
         loss_G.backward()
