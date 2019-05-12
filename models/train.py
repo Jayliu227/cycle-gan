@@ -12,6 +12,10 @@ from PIL import Image
 from model import Generator
 from model import Discriminator
 from datasets import ImageDataset
+
+from mask import get_mask, shape_sim
+from color_compare import color_sim
+
 import utils
 
 dataroot = "../data"
@@ -90,12 +94,11 @@ transforms = transforms.Compose([
     transforms.Resize(int(image_size * 1.2), Image.BICUBIC),
     transforms.RandomCrop(image_size),
     transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    transforms.ToTensor()    
 ])
 
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, aligned=True)
-dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 p = utils.Plotter(['Loss_G', 'Loss_Dx', 'Loss_Dy'])
 
@@ -127,8 +130,37 @@ for epoch in range(epochs):
         recovered_Y = G.forward(fake_X)
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
+        # shape-color consistency loss
+        alpha = 2.0
+        beta = 2.0
+        gamma = 10.0
+        protect = 1e-5
+        
+        gen_Y = (fake_Y.clone().detach().cpu() + 1.0) * 0.5
+        gen_X = (fake_X.clone().detach().cpu() + 1.0) * 0.5
+        
+        mask_X = get_mask(raw_X)
+        mask_Y = get_mask(raw_Y)
+        mask_GX = get_mask(gen_Y)
+        mask_FY = get_mask(gen_X)
+        
+        shape_sim_GX_Y = shape_sim(mask_GX, mask_Y)
+        shape_sim_FY_X = shape_sim(mask_FY, mask_X)
+        
+        fore_color_sim_GX_Y = color_sim(gen_Y, mask_GX, raw_Y, mask_Y)
+        back_color_sim_GX_X = color_sim(gen_Y, mask_GX, raw_X, mask_X, is_foreground=False)
+        
+        fore_color_sim_FY_X = color_sim(gen_X, mask_FY, raw_X, mask_X)
+        back_color_sim_FY_Y = color_sim(gen_X, mask_FY, raw_Y, mask_Y, is_foreground=False)        
+        
+        loss_shape_color =  shape_sim_GX_Y / max(protect, alpha * fore_color_sim_GX_Y + beta * back_color_sim_GX_X)
+        loss_shape_color += shape_sim_FY_X / max(protect, alpha * fore_color_sim_FY_X + beta * back_color_sim_FY_Y)
+        
+        loss_shape_color *= gamma
+        
+        print("here")
         # total_loss on generators
-        loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_X2X + loss_cycle_Y2Y
+        loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_X2X + loss_cycle_Y2Y + loss_shape_color
         loss_G.backward()
 
         optimizer_G.step()
