@@ -4,7 +4,7 @@ import torch
 import numpy as np
 import cv2
 
-def get_histogram(img, mask):
+def get_histogram(img, mask, is_foreground):
     '''
     input:
         img is 4d pytorch tensor image
@@ -12,6 +12,9 @@ def get_histogram(img, mask):
     output:
         flatten normalized color histogram        
     '''
+    if is_foreground is False:
+        mask = 1 - mask
+    
     # convert from 4d pytorch (1, C, H, W) ~ [0, 1] to numpy array (C, H, W) ~ [0, 255]
     img_3d = img.view(img.shape[1:]).numpy() * 255
     
@@ -23,9 +26,9 @@ def get_histogram(img, mask):
     hist = cv2.normalize(hist, hist).flatten()
     return hist
 
-def color_sim(img_a, mask_a, img_b, mask_b, method='Correlation'):
-    hist_a = get_histogram(img_a, mask_a)
-    hist_b = get_histogram(img_b, mask_b)
+def color_sim(img_a, mask_a, img_b, mask_b, is_foreground=True, method='Correlation'):
+    hist_a = get_histogram(img_a, mask_a, is_foreground)
+    hist_b = get_histogram(img_b, mask_b, is_foreground)
 
     # 'Chi-Squared': cv2.HISTCMP_CHISQR, 'Hellinger': cv2.HISTCMP_BHATTACHARYYA
     methods = {

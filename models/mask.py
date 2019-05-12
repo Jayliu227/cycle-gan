@@ -123,11 +123,12 @@ def get_mask(img):
     
     # return the mask that has largest area, as there are several masks 
     if len(output_dict['detection_masks']) == 0:
-        return 0        
+        # print('Error: Did not detect any shape')
+        return np.zeros((img.shape[1], img.shape[2]))        
     return output_dict['detection_masks'][np.argmax([np.count_nonzero(mask) for mask in output_dict['detection_masks']])]
 
 
-def shape_sim_topleft(mask_a, mask_b):
+def shape_sim(mask_a, mask_b):
     '''
     input:
         two 2d np array, image masks
@@ -135,5 +136,5 @@ def shape_sim_topleft(mask_a, mask_b):
         a scored determined by their area overlapping
     '''
     a = np.count_nonzero(np.minimum(mask_a,mask_b))
-    b = max(np.count_nonzero(mask_a), np.count_nonzero(mask_a))
-    return a/b
+    b = max(np.count_nonzero(mask_a), np.count_nonzero(mask_b))
+    return a / max(1e-5, b)

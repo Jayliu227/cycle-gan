@@ -47,11 +47,11 @@ class ImageDataset(Dataset):
             image_X_raw = image_X_raw.convert('RGB')
             image_Y_raw = image_Y_raw.convert('RGB')
         
-        image_X_trans = self.transforms(image_X_raw)
-        image_Y_trans = self.transforms(image_Y_raw)
+        image_X_raw = self.transforms(image_X_raw)
+        image_Y_raw = self.transforms(image_Y_raw)
         
-        image_X_raw = transforms.ToTensor()(image_X_raw)
-        image_Y_raw = transforms.ToTensor()(image_Y_raw)
+        image_X_trans = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(image_X_raw)
+        image_Y_trans = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(image_Y_raw)
         
         return {'X_raw': image_X_raw, 'Y_raw': image_Y_raw, 'X_trans': image_X_trans, 'Y_trans': image_Y_trans}
         
