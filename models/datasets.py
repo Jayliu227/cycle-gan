@@ -37,20 +37,23 @@ class ImageDataset(Dataset):
         output: a dict with two keys: 'X' will contain the batch of images from set X   
                                       'Y' will contain the batch of images from set Y 
         '''
-        image_X = Image.open(self.files_X[index % len(self.files_X)])
+        image_X_raw = Image.open(self.files_X[index % len(self.files_X)])
         if self.aligned:
-            image_Y = Image.open(self.files_Y[index % len(self.files_Y)])
+            image_Y_raw = Image.open(self.files_Y[index % len(self.files_Y)])
         else:
-            image_Y = Image.open(self.files_Y[random.randint(0, len(self.files_Y) - 1)])
+            image_Y_raw = Image.open(self.files_Y[random.randint(0, len(self.files_Y) - 1)])
 
         if self.forceRGB:
-            image_X = image_X.convert('RGB')
-            image_Y = image_Y.convert('RGB')
-
-        image_X = self.transforms(image_X)
-        image_Y = self.transforms(image_Y)
-
-        return {'X': image_X, 'Y': image_Y}
+            image_X_raw = image_X_raw.convert('RGB')
+            image_Y_raw = image_Y_raw.convert('RGB')
+        
+        image_X_trans = self.transforms(image_X_raw)
+        image_Y_trans = self.transforms(image_Y_raw)
+        
+        image_X_raw = transforms.ToTensor()(image_X_raw)
+        image_Y_raw = transforms.ToTensor()(image_Y_raw)
+        
+        return {'X_raw': image_X_raw, 'Y_raw': image_Y_raw, 'X_trans': image_X_trans, 'Y_trans': image_Y_trans}
         
     def __len__(self):
         return max(len(self.files_X), len(self.files_Y))

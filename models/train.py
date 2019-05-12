@@ -103,9 +103,12 @@ print('Start training.')
 for epoch in range(epochs):
     start_time = time.monotonic()
     for idx, batch in enumerate(dataloader):
-        real_X = input_X.copy_(batch['X'])
-        real_Y = input_Y.copy_(batch['Y'])
-
+        real_X = input_X.copy_(batch['X_trans'])
+        real_Y = input_Y.copy_(batch['Y_trans'])        
+        
+        raw_X = batch['X_raw']
+        raw_Y = batch['Y_raw']
+        
         # training generators
         optimizer_G.zero_grad()
         # GAN loss
