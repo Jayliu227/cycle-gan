@@ -59,8 +59,10 @@ cycle-gan-shape-color-regularization
         |---Y <generated from original X set>
         |---recover <recovered image from x set>
     |---models
-    |---object_detection
-    |---other scripts
+        |---object_detection
+        |---train.py
+        |---test.py
+        |---other utility scripts
 ```
 Train model (in *model* folder)
 ```
