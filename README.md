@@ -1,5 +1,9 @@
 # Cycle-GAN with Shape-Color-Similarity Regularization
 
+## Dependencies
+
+[TODO]
+
 ## Installation
 
 Clone the repository
@@ -18,11 +22,12 @@ cp -rf models/research/object_detection/ cycle-gan-shape-color-regularization/mo
 ```
 Navigate into our repository and create two folders
 ```
+cd cycle-gan-shape-color-regularization
 mkdir output
 mkdir save
 mkdir data
 ```
-where output is used to store the testing results of the model, save is used for storing the trained model, and data is the directory for the dataset
+where *output folder* is used to store the testing results of the model, *save folder* is used for storing the trained model, and *data folder* is the directory for the dataset
 
 Dataset is organized as follows:
 ```
@@ -45,7 +50,14 @@ cycle-gan-shape-color-regularization
             |---X <X image set>
             |---Y <Y image set>
     |---save
+        |---Dx.pth
+        |---Dy.pth
+        |---F.pth
+        |---G.pth
     |---output
+        |---X <generated from original Y set>
+        |---Y <generated from original X set>
+        |---recover <recovered image from x set>
     |---models
     |---object_detection
     |---other scripts
