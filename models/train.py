@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from torch.nn.parallel.data_parallel import DataParallel
 from PIL import Image
 
-from model import Generator
-from model import Discriminator
+from models import Generator
+from models import Discriminator
 from datasets import ImageDataset
 
 from mask import get_mask, shape_sim
@@ -19,11 +19,11 @@ from color_compare import color_sim
 import utils
 
 dataroot = "../data"
-epochs = 100
+epochs = 50
 batch_size = 1
 lr = 0.0002
-decay_epoch = 50
-image_size = 32
+decay_epoch = 25
+image_size = 256
 input_nc = 3
 output_nc = 3
 cuda = True
@@ -131,7 +131,7 @@ for epoch in range(epochs):
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
         # shape-color consistency loss
-        if epoch > 50:
+        if epoch > 25:
             alpha = 2.0
             beta = 2.0
             gamma = 15.0
