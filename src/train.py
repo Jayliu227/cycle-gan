@@ -145,10 +145,7 @@ for epoch in range(epochs):
             mask_Y = get_mask(raw_Y)
             mask_GX = get_mask(gen_Y)
             mask_FY = get_mask(gen_X)
-#             print("get 4 masks use",time.time() - start,"sec")
-            
-#             print("mask_GX",mask_GX)
-#             print("mask_Y:",mask_Y)
+
             shape_sim_GX_Y = shape_sim(mask_GX, mask_Y)
             shape_sim_FY_X = shape_sim(mask_FY, mask_X)
 
