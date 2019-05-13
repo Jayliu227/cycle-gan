@@ -6,5 +6,6 @@ output/
 X.zip
 Y.zip
 models/__pycache__/
+models/object_detection/BEST_checkpoint_ssd300.pth.tar
 download_dataset.sh
 
