@@ -13,7 +13,7 @@ from models import Generator
 from models import Discriminator
 from datasets import ImageDataset
 
-from mask import get_mask, shape_sim
+from shape_compare import get_mask, shape_sim
 from color_compare import color_sim
 
 import utils
@@ -131,20 +131,24 @@ for epoch in range(epochs):
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
         # shape-color consistency loss
-        if epoch > 25:
+        if epoch > -1:
             alpha = 2.0
             beta = 2.0
-            gamma = 15.0
+            gamma = 5.0
             protect = 1e-5
 
             gen_Y = (fake_Y.clone().detach().cpu() + 1.0) * 0.5
             gen_X = (fake_X.clone().detach().cpu() + 1.0) * 0.5
 
+            start = time.time()
             mask_X = get_mask(raw_X)
             mask_Y = get_mask(raw_Y)
             mask_GX = get_mask(gen_Y)
             mask_FY = get_mask(gen_X)
-
+#             print("get 4 masks use",time.time() - start,"sec")
+            
+#             print("mask_GX",mask_GX)
+#             print("mask_Y:",mask_Y)
             shape_sim_GX_Y = shape_sim(mask_GX, mask_Y)
             shape_sim_FY_X = shape_sim(mask_FY, mask_X)
 

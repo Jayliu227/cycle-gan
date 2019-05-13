@@ -1,21 +1,23 @@
 from torchvision import transforms
-from object_detection.utils import *
 from PIL import Image, ImageDraw, ImageFont
+from utils import *
+
 import sys
 import warnings
+import numpy as np
 
 warnings.filterwarnings('ignore')
+sys.path.append('./object_detection')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load model checkpoint
-sys.path.append('./object_detection')
 checkpoint = './object_detection/BEST_checkpoint_ssd300.pth.tar'
 checkpoint = torch.load(checkpoint)
 start_epoch = checkpoint['epoch'] + 1
 best_loss = checkpoint['best_loss']
 
-print('\nLoaded checkpoint from epoch %d. Best loss so far is %.3f.\n' % (start_epoch, best_loss))
+print('Finished loading detection model.')
 
 model = checkpoint['model']
 model = model.to(device)
@@ -26,8 +28,10 @@ resize = transforms.Resize((300, 300))
 to_tensor = transforms.ToTensor()
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
 
-def detect(original_image, min_score=0.2, max_overlap=0.5, top_k=200, suppress=None):
+def get_mask(tensor, min_score=0.2, max_overlap=0.5, top_k=200, suppress=None):
 
+    original_image = convert_to_PIL(tensor)
+    
     # Transform
     image = normalize(to_tensor(resize(original_image)))
 
@@ -52,39 +56,69 @@ def detect(original_image, min_score=0.2, max_overlap=0.5, top_k=200, suppress=N
     # Decode class integer labels
     det_labels = [rev_label_map[l] for l in det_labels[0].to('cpu').tolist()]
 
-    # If no objects found, the detected labels will be set to ['0.'], i.e. ['background'] in SSD300.detect_objects() in model.py
     if det_labels == ['background']:
-        # Just return original image
-        return original_image
+        return convert_to_mask(original_image.height, original_image.width, None)
+    else:
+        return convert_to_mask(original_image.height, original_image.width, largest_box(det_boxes))
 
-    # Annotate
-    annotated_image = original_image
-    draw = ImageDraw.Draw(annotated_image)
-    font = ImageFont.load_default()
+def convert_to_PIL(tensor):    
+    '''
+    input: 
+        tensor (1, 3, H, W) ~ (0, 1) pytorch tensor
+    output:
+        PIL image
+    '''
+    tensor = tensor.view(3, tensor.shape[2], tensor.shape[3])
+    image = transforms.ToPILImage()(tensor)
+    return image
 
-    # Suppress specific classes, if needed
-    for i in range(det_boxes.size(0)):
-        if suppress is not None:
-            if det_labels[i] in suppress:
-                continue
-        # Boxes
-        box_location = det_boxes[i].tolist()
-        draw.rectangle(xy=box_location, outline=label_color_map[det_labels[i]])
-        draw.rectangle(xy=[l + 1. for l in box_location], outline=label_color_map[
-            det_labels[i]])  # a second rectangle at an offset of 1 pixel to increase line thickness
-        # draw.rectangle(xy=[l + 2. for l in box_location], outline=label_color_map[
-        #     det_labels[i]])  # a third rectangle at an offset of 1 pixel to increase line thickness
-        # draw.rectangle(xy=[l + 3. for l in box_location], outline=label_color_map[
-        #     det_labels[i]])  # a fourth rectangle at an offset of 1 pixel to increase line thickness
+def largest_box(boxes):
+    largest = None
+    area = 0
+    for box in boxes:
+        cur_area = (box[2] - box[0]) * (box[3] - box[1])
+        if cur_area > area:
+            area = cur_area
+            largest = box
+    return largest
 
-        # Text
-        text_size = font.getsize(det_labels[i].upper())
-        text_location = [box_location[0] + 2., box_location[1] - text_size[1]]
-        textbox_location = [box_location[0], box_location[1] - text_size[1], box_location[0] + text_size[0] + 4.,
-                            box_location[1]]
-        draw.rectangle(xy=textbox_location, fill=label_color_map[det_labels[i]])
-        draw.text(xy=text_location, text=det_labels[i].upper(), fill='white',
-                  font=font)
-    del draw
+def convert_to_mask(height, width, box):
+    if box is None or box[0] < 0 or box[1] < 0 or box[2] < 0 or box[3] < 0:
+        return np.zeros((height, width)) -1
+    
+    
+    mask = np.zeros((height, width))
+#     if box is None:
+#         return mask    
+    # (xmin, ymin, xmax, ymax)    
+    mask[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 1
+    return mask
+    
+    
+def shift_img_to_upper_left(img):
+    '''
+    input:
+        img (2d np array)
+    return:
+        img (2d np array) – img shifted to the upper left
+    '''
+    
+    while np.count_nonzero(img[0,:]) == 0:
+        img = np.concatenate((img[1:,],img[:1,]))
+    while np.count_nonzero(img[:,0]) == 0:
+        img = np.concatenate((img[:,1:],img[:,:1]), axis=1)
+    return img     
 
-    return annotated_image
+
+def shape_sim(mask_a, mask_b):
+    '''
+    input:
+        mask_a, mask_b: 2D numpy array where 1 is foreground and 0 is background
+    output:
+        scaler, shape similarity between (0, 1)
+    '''
+    mask_a = shift_img_to_upper_left(mask_a)
+    mask_b = shift_img_to_upper_left(mask_b)
+    a = np.count_nonzero(np.minimum(mask_a,mask_b))
+    b = max(np.count_nonzero(mask_a), np.count_nonzero(mask_b))
+    return a / max(1e-5, b)
