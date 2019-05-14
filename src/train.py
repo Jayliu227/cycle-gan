@@ -30,7 +30,7 @@ output_nc = 3
 cuda = True
 num_workers = 10
 
-transfer = True
+transfer = False
 
 if torch.cuda.is_available() and not cuda:
     print("Cuda available but not in use.")
@@ -184,10 +184,10 @@ for epoch in range(epochs):
             loss_shape_color = 0
         
         # total_loss on generators
-        loss_G = loss_identity_X + loss_identity_Y + 
-                 loss_GAN_X2Y + loss_GAN_Y2X + 
-                 loss_cycle_X2X + loss_cycle_Y2Y + 
-                 loss_shape_color
+        loss_G = loss_identity_X + loss_identity_Y
+        loss_G += loss_GAN_X2Y + loss_GAN_Y2X
+        loss_G += loss_cycle_X2X + loss_cycle_Y2Y
+        loss_G += loss_shape_color         
                  
         loss_G.backward()
         optimizer_G.step()
