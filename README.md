@@ -10,15 +10,11 @@ Clone the repository
 ```
 git clone https://github.com/Jayliu227/cycle-gan-shape-color-regularization.git
 ```
-Clone the helper repository from tensorflow
-```
-git clone https://github.com/tensorflow/models.git
-```
-Follow their instruction to install and setup the environment, and remember to download their pretrained model, the instruction of which can be found in the *jupyter notebook* in their *object_detection* folder.
+Download the pretrained model from [a-PyTorch-Tutorial-to-Object-Detection pretrained model](https://drive.google.com/file/d/1YZp2PUR1NYKPlBIVoVRO0Tg1ECDmrnC3/view)
 
-Once finished, we only need to use one module from their repository
+Once finished, we can move the pretrained model into the directory 
 ```
-cp -rf models/research/object_detection/ cycle-gan-shape-color-regularization/models/
+mv BEST_checkpoint_ssd300.pth.tar cycle-gan-shape-color-regularization/src/object_detection/
 ```
 Navigate into our repository and create two folders
 ```
@@ -58,8 +54,9 @@ cycle-gan-shape-color-regularization
         |---X <generated from original Y set>
         |---Y <generated from original X set>
         |---recover <recovered image from x set>
-    |---models
+    |---src
         |---object_detection
+            |---BEST_checkpoint_ssd300.pth.tar <pretrained model>
         |---train.py
         |---test.py
         |---other utility scripts
