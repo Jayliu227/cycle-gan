@@ -131,7 +131,7 @@ for epoch in range(epochs):
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
         # shape-color consistency loss
-        if epoch > -1:
+        if epoch > 25:
             alpha = 2.0
             beta = 2.0
             gamma = 5.0

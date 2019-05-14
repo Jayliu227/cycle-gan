@@ -3,7 +3,7 @@ import sys
 
 import torch
 from torchvision.transforms import transforms
-from model import Generator
+from models import Generator
 from torchvision.utils import save_image
 from torch.utils.data import DataLoader
 from datasets import ImageDataset
@@ -56,15 +56,18 @@ if not os.path.exists(output_dir_recover):
 
 print('Start Generating Images')
 for idx, batch in enumerate(dataloader):
-    real_X = input_X.copy_(batch['X'])
-    real_Y = input_Y.copy_(batch['Y'])
+    real_X = input_X.copy_(batch['X_raw'])
+    real_Y = input_Y.copy_(batch['Y_raw'])
 
     # generate output
     fake_Y = (G(real_X).data + 1.0) * 0.5
     fake_X = (F(real_Y).data + 1.0) * 0.5
 
-    save_image(fake_X, os.path.join(output_dir_X, '%d.png' % (idx + 1)))
-    save_image(fake_Y, os.path.join(output_dir_Y, '%d.png' % (idx + 1)))
+    save_image(real_X, os.path.join(output_dir_X, '%d_real.png' % (idx + 1)))
+    save_image(fake_Y, os.path.join(output_dir_X, '%d_fake.png' % (idx + 1)))
+    
+    save_image(real_Y, os.path.join(output_dir_Y, '%d_real.png' % (idx + 1)))
+    save_image(fake_X, os.path.join(output_dir_Y, '%d_fake.png' % (idx + 1)))
 
     recover = (F(G(real_X)).data + 1.0) * 0.5
     save_image(recover, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))

@@ -83,31 +83,30 @@ def largest_box(boxes):
     return largest
 
 def convert_to_mask(height, width, box):
+    mask = np.zeros((height, width))    
+    
     if box is None or box[0] < 0 or box[1] < 0 or box[2] < 0 or box[3] < 0:
-        return np.zeros((height, width)) -1
-    
-    
-    mask = np.zeros((height, width))
-#     if box is None:
-#         return mask    
-    # (xmin, ymin, xmax, ymax)    
+        return mask
+
     mask[int(box[1]):int(box[3]), int(box[0]):int(box[2])] = 1
     return mask
     
     
-def shift_img_to_upper_left(img):
+def shift_mask_to_upper_left(mask):
     '''
     input:
         img (2d np array)
     return:
         img (2d np array) – img shifted to the upper left
     '''
+    if np.count_nonzero(mask) == 0:
+        return mask
     
-    while np.count_nonzero(img[0,:]) == 0:
-        img = np.concatenate((img[1:,],img[:1,]))
-    while np.count_nonzero(img[:,0]) == 0:
-        img = np.concatenate((img[:,1:],img[:,:1]), axis=1)
-    return img     
+    while np.count_nonzero(mask[0,:]) == 0:
+        mask = np.concatenate((mask[1:,],mask[:1,]))
+    while np.count_nonzero(mask[:,0]) == 0:
+        mask = np.concatenate((mask[:,1:],mask[:,:1]), axis=1)
+    return mask
 
 
 def shape_sim(mask_a, mask_b):
@@ -117,8 +116,8 @@ def shape_sim(mask_a, mask_b):
     output:
         scaler, shape similarity between (0, 1)
     '''
-    mask_a = shift_img_to_upper_left(mask_a)
-    mask_b = shift_img_to_upper_left(mask_b)
+    mask_a = shift_mask_to_upper_left(mask_a)
+    mask_b = shift_mask_to_upper_left(mask_b)
     a = np.count_nonzero(np.minimum(mask_a,mask_b))
     b = max(np.count_nonzero(mask_a), np.count_nonzero(mask_b))
     return a / max(1e-5, b)
