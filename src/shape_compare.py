@@ -101,7 +101,6 @@ def shift_mask_to_upper_left(mask):
     '''
     if np.count_nonzero(mask) == 0:
         return mask
-    
     while np.count_nonzero(mask[0,:]) == 0:
         mask = np.concatenate((mask[1:,],mask[:1,]))
     while np.count_nonzero(mask[:,0]) == 0:
