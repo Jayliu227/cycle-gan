@@ -8,6 +8,7 @@ from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from torch.nn.parallel.data_parallel import DataParallel
 from PIL import Image
+from math import log
 
 from models import Generator
 from models import Discriminator
@@ -29,11 +30,14 @@ output_nc = 3
 cuda = True
 num_workers = 10
 
+transfer = True
+
 if torch.cuda.is_available() and not cuda:
     print("Cuda available but not in use.")
 
 device = torch.device('cuda:0' if torch.cuda.is_available() and cuda else 'cpu')
 
+   
 # generator G: X->Y
 G = Generator(input_nc, output_nc)
 # generator F: Y->X
@@ -43,6 +47,12 @@ Dx = Discriminator(input_nc)
 # discriminator Dy: Y->probability
 Dy = Discriminator(output_nc)
 
+if transfer:
+    G.load_state_dict(torch.load('../save/G.pth'))
+    F.load_state_dict(torch.load('../save/F.pth'))
+    Dx.load_state_dict(torch.load('../save/Dx.pth'))
+    Dy.load_state_dict(torch.load('../save/Dy.pth'))
+
 # parallelize the model if need to
 if torch.cuda.device_count() > 1 and cuda:
     print('Use %d gpus.' % torch.cuda.device_count())
@@ -50,16 +60,17 @@ if torch.cuda.device_count() > 1 and cuda:
     F = nn.DataParallel(F)
     Dx = nn.DataParallel(Dx)
     Dy = nn.DataParallel(Dy)
-
+        
 G.to(device)
 F.to(device)
 Dx.to(device)
 Dy.to(device)
 
-G.apply(utils.init_weights_normal)
-F.apply(utils.init_weights_normal)
-Dx.apply(utils.init_weights_normal)
-Dy.apply(utils.init_weights_normal)
+if transfer is False:
+    G.apply(utils.init_weights_normal)
+    F.apply(utils.init_weights_normal)
+    Dx.apply(utils.init_weights_normal)
+    Dy.apply(utils.init_weights_normal)
 
 # loss functions
 criterion_GAN = torch.nn.MSELoss()
@@ -114,7 +125,15 @@ for epoch in range(epochs):
         
         # training generators
         optimizer_G.zero_grad()
-        # GAN loss
+
+        # identity loss
+        same_Y = G.forward(real_Y)  # G: X->Y
+        loss_identity_Y = criterion_identity(same_Y, real_Y) * 5.0
+        
+        same_X = F.forward(real_X)  # F: Y->X
+        loss_identity_X = criterion_identity(same_X, real_X) * 5.0
+        
+        # GAN loss        
         fake_Y = G.forward(real_X)
         pred_fake = Dy.forward(fake_Y)
         loss_GAN_X2Y = criterion_GAN(pred_fake, real_labels)
@@ -131,7 +150,7 @@ for epoch in range(epochs):
         loss_cycle_Y2Y = criterion_cycle(recovered_Y, real_Y) * 10.0
 
         # shape-color consistency loss
-        if epoch > epochs // 2:
+        if transfer is True:
             alpha = 2.0
             beta = 2.0
             gamma = 5.0
@@ -158,14 +177,19 @@ for epoch in range(epochs):
             loss_shape_color =  shape_sim_GX_Y / max(protect, alpha * fore_color_sim_GX_Y + beta * back_color_sim_GX_X)
             loss_shape_color += shape_sim_FY_X / max(protect, alpha * fore_color_sim_FY_X + beta * back_color_sim_FY_Y)
 
+            # smooth loss
+            loss_shape_color = log(loss_shape_color + 1.0)
             loss_shape_color *= gamma
         else:
             loss_shape_color = 0
         
         # total_loss on generators
-        loss_G = loss_GAN_X2Y + loss_GAN_Y2X + loss_cycle_X2X + loss_cycle_Y2Y + loss_shape_color
+        loss_G = loss_identity_X + loss_identity_Y + 
+                 loss_GAN_X2Y + loss_GAN_Y2X + 
+                 loss_cycle_X2X + loss_cycle_Y2Y + 
+                 loss_shape_color
+                 
         loss_G.backward()
-
         optimizer_G.step()
         
         # training discriminator Dx
@@ -181,7 +205,7 @@ for epoch in range(epochs):
         loss_Dx_fake = criterion_GAN(pred_fake, fake_labels)
 
         # total loss
-        loss_Dx = (loss_Dx_real + loss_Dx_fake) / 2
+        loss_Dx = (loss_Dx_real + loss_Dx_fake) * 0.5
         loss_Dx.backward()
 
         optimizer_Dx.step()
@@ -199,7 +223,7 @@ for epoch in range(epochs):
         loss_Dy_fake = criterion_GAN(pred_fake, fake_labels)
 
         # total loss
-        loss_Dy = (loss_Dy_real + loss_Dy_fake) / 2
+        loss_Dy = (loss_Dy_real + loss_Dy_fake) * 0.5
         loss_Dy.backward()
 
         optimizer_Dy.step()

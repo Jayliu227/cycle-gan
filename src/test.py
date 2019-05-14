@@ -37,7 +37,6 @@ input_Y = Tensor(batch_size, output_nc, image_size, image_size)
 transforms = transforms.Compose([
     transforms.Resize((image_size, image_size)),
     transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 ])
 
 dataset = ImageDataset(dataroot=dataroot, transforms=transforms, mode='test')
@@ -56,22 +55,25 @@ if not os.path.exists(output_dir_recover):
 
 print('Start Generating Images')
 for idx, batch in enumerate(dataloader):
-    real_X = input_X.copy_(batch['X_raw'])
-    real_Y = input_Y.copy_(batch['Y_raw'])
+    real_X = input_X.copy_(batch['X_trans'])
+    real_Y = input_Y.copy_(batch['Y_trans'])
 
     # generate output
     fake_Y = (G(real_X).data + 1.0) * 0.5
     fake_X = (F(real_Y).data + 1.0) * 0.5
 
+    recover = (F(G(real_X)).data + 1.0) * 0.5
+    save_image(recover, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))
+
+    real_X = (real_X + 1.0) * 0.5
+    real_Y = (real_Y + 1.0) * 0.5
+    
     save_image(real_X, os.path.join(output_dir_X, '%d_real.png' % (idx + 1)))
     save_image(fake_Y, os.path.join(output_dir_X, '%d_fake.png' % (idx + 1)))
     
     save_image(real_Y, os.path.join(output_dir_Y, '%d_real.png' % (idx + 1)))
     save_image(fake_X, os.path.join(output_dir_Y, '%d_fake.png' % (idx + 1)))
-
-    recover = (F(G(real_X)).data + 1.0) * 0.5
-    save_image(recover, os.path.join(output_dir_recover, '%d.png' % (idx + 1)))
-
-
+    
+    
 print('Finished Generating Images.')
 
