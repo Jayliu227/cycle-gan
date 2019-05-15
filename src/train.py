@@ -128,19 +128,19 @@ for epoch in range(epochs):
 
         # identity loss
         same_Y = G.forward(real_Y)  # G: X->Y
-        loss_identity_Y = criterion_identity(same_Y, real_Y) * 5.0
+        loss_identity_Y = criterion_identity(same_Y, real_Y) * 0.5
         
         same_X = F.forward(real_X)  # F: Y->X
-        loss_identity_X = criterion_identity(same_X, real_X) * 5.0
+        loss_identity_X = criterion_identity(same_X, real_X) * 0.5
         
         # GAN loss        
         fake_Y = G.forward(real_X)
         pred_fake = Dy.forward(fake_Y)
-        loss_GAN_X2Y = criterion_GAN(pred_fake, real_labels)
+        loss_GAN_X2Y = criterion_GAN(pred_fake, real_labels) * 2.0
 
         fake_X = F.forward(real_Y)
         pred_fake = Dx.forward(fake_X)
-        loss_GAN_Y2X = criterion_GAN(pred_fake, real_labels)
+        loss_GAN_Y2X = criterion_GAN(pred_fake, real_labels) * 2.0
 
         # cycle loss
         recovered_X = F.forward(fake_Y)
@@ -235,7 +235,7 @@ for epoch in range(epochs):
     # add loss information into the plotter
     p.add([loss_G, loss_Dx, loss_Dy])
     # save a figure every 10 epochs
-    if epoch % 10 == 0 or epoch == epochs - 1:
+    if epoch % 5 == 0 or epoch == epochs - 1:
         p.plot(show=False, save=True)
 
     # update learning rates
