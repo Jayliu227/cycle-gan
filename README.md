@@ -69,3 +69,5 @@ Test model (in *model* folder)
 ```
 python test.py
 ```
+
+For better and more stable experiments, it is recommened to test with the [source code](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) provided by the author of the CycleGAN paper. Copy and *scripts* and *object_detection* folder to their repository and modify the loss function based on *train.py*.
