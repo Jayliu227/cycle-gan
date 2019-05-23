@@ -1,8 +1,8 @@
 # Cycle-GAN with Shape-Color-Similarity Regularization
 
-## Dependencies
+## Introduction
 
-[TODO]
+This project aims to figure out an effective method for constraining the generators and exploit the relationships between two unpaired image datasets based on the [CycleGAN paper](https://arxiv.org/pdf/1703.10593.pdf). Our approach is to add a new regularization term to the total loss, which penalizes the generators when the generated images G(X) or F(Y) have different shapes than the target images Y or X and the foreground colors are also different. For more details, please refer to the [paper](https://github.com/Jayliu227/cycle-gan-shape-color-regularization/blob/master/SCR.pdf). 
 
 ## Installation
 
@@ -70,4 +70,4 @@ Test model (in *model* folder)
 python test.py
 ```
 
-For better and more stable experiments, it is recommened to test with the [source code](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) provided by the author of the CycleGAN paper. Copy and *scripts* and *object_detection* folder to their repository and modify the loss function based on *train.py*.
+For better and more stable experiments, it is recommened to test with the [source code](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) provided by the author of the CycleGAN paper. Copy the *scripts* and *object_detection* folder to their repository and modify the loss function based on *train.py*.
